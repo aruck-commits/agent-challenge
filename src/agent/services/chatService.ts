@@ -4,15 +4,9 @@ import { suggestRebalance } from '../actions/suggestRebalance';
 import { orionCharacter } from '../character';
 import type { ChatMessage, ChatResponse, PortfolioSnapshot, Alert, RebalanceSuggestion } from '../../shared/types';
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
-const IS_OPENROUTER_KEY = OPENAI_API_KEY.startsWith('sk-or-v1');
-const OPENAI_BASE_URL = (
-  process.env.OPENAI_BASE_URL
-  || (IS_OPENROUTER_KEY ? 'https://openrouter.ai/api/v1' : 'https://api.openai.com/v1')
-).replace(/\/$/, '');
-const DEFAULT_MODEL = process.env.ORION_CHAT_MODEL
-  || process.env.OPENAI_MODEL
-  || (IS_OPENROUTER_KEY ? 'openai/gpt-4o-mini' : 'gpt-4o-mini');
+const OPENAI_API_KEY = 'nosana';
+const OPENAI_BASE_URL = 'https://6vq2bcqphcansrs9b88ztxfs88oqy7etah2ugudytv2x.node.k8s.prd.nos.ci/v1';
+const DEFAULT_MODEL = 'Qwen3.5-27B-AWQ-4bit';
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -289,11 +283,6 @@ async function generateWithOpenAI(message: string, history: ChatMessage[], snaps
     Authorization: `Bearer ${OPENAI_API_KEY}`,
   };
 
-  if (OPENAI_BASE_URL.includes('openrouter.ai')) {
-    headers['HTTP-Referer'] = process.env.ORION_SITE_URL || 'http://localhost:5173';
-    headers['X-Title'] = 'Orion DeFi Risk Officer';
-  }
-
   const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers,
@@ -316,20 +305,22 @@ async function generateWithOpenAI(message: string, history: ChatMessage[], snaps
 
   const content = payload.choices?.[0]?.message?.content?.trim();
   if (!content) return null;
+  const cleanContent = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  if (!cleanContent) return null;
 
   try {
-    const parsed = JSON.parse(content) as Partial<ChatResponse>;
+    const parsed = JSON.parse(cleanContent) as Partial<ChatResponse>;
     return {
       reply: typeof parsed.reply === 'string' && parsed.reply.trim().length > 0
         ? parsed.reply.trim()
-        : content,
+        : cleanContent,
       suggestedReplies: Array.isArray(parsed.suggestedReplies)
         ? parsed.suggestedReplies.filter((item): item is string => typeof item === 'string').slice(0, 3)
         : [],
     };
   } catch {
     return {
-      reply: content,
+      reply: cleanContent,
       suggestedReplies: [],
     };
   }

@@ -108,7 +108,7 @@ See [`docs/scoring-model.md`](docs/scoring-model.md) for full detail.
 
 ```bash
 cp .env.example .env
-# Fill in HELIUS_API_KEY, OPENAI_API_KEY, and optionally TELEGRAM credentials
+# Fill in HELIUS_API_KEY and optionally TELEGRAM credentials
 # Set WATCHED_WALLETS=<your-solana-address>
 npm run dev
 ```
@@ -120,7 +120,7 @@ npm run dev
 | Variable | Required | Description |
 |---|---|---|
 | `PORT` | No | API port (default: 3000) |
-| `OPENAI_API_KEY` | For AI explanations | Powers natural-language risk summaries |
+| `SECRET_SALT` | For ElizaOS | Required in production for encrypted settings |
 | `HELIUS_API_KEY` | For live data | Wallet balances + transaction history |
 | `SOLANA_RPC_URL` | For live data | Helius-powered RPC endpoint |
 | `JUPITER_API_BASE` | Auto | `https://lite-api.jup.ag` |
