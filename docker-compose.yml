@@ -1,0 +1,26 @@
+services:
+  orion:
+    build: .
+    image: orion-defi-risk-officer:latest
+    container_name: orion
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - HELIUS_API_KEY=${HELIUS_API_KEY}
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL}
+      - JUPITER_API_BASE=${JUPITER_API_BASE:-https://lite-api.jup.ag}
+      - JUPITER_PRICE_API=${JUPITER_PRICE_API:-https://lite-api.jup.ag/price/v3}
+      - JUPITER_PORTFOLIO_API=${JUPITER_PORTFOLIO_API:-https://portfolio-api.jup.ag/v1}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - WATCHED_WALLETS=${WATCHED_WALLETS}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

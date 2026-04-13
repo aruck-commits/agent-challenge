@@ -1,0 +1,231 @@
+@config '../../tailwind.config.mjs';
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import '@solana/wallet-adapter-react-ui/styles.css';
+
+:root {
+	color-scheme: dark;
+	--bg-color: #000500;
+	--light-color: #00ff7f;
+	--glow-color-1: rgba(0, 255, 127, 0.8);
+	--glow-color-2: rgba(60, 255, 157, 0.6);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html {
+	background: var(--bg-color);
+}
+
+body {
+	margin: 0;
+	min-height: 100vh;
+	color: #f1f5f9;
+	background: var(--bg-color);
+	font-family: 'Inter', system-ui, -apple-system, sans-serif;
+	overflow-x: hidden;
+}
+
+.scene {
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	overflow: hidden;
+	background:
+		radial-gradient(70% 50% at 50% 20%, rgba(0, 255, 127, 0.18) 0%, transparent 55%),
+		radial-gradient(50% 40% at 80% 85%, rgba(60, 255, 157, 0.12) 0%, transparent 65%),
+		linear-gradient(180deg, #010704 0%, #000500 55%, #000300 100%);
+}
+
+.scene::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image:
+		linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+	background-size: 80px 40px;
+	opacity: 0.35;
+	animation: moveGrid 24s linear infinite;
+	mask-image: linear-gradient(180deg, transparent 0%, black 18%, black 82%, transparent 100%);
+}
+
+.scene::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: radial-gradient(circle at center, transparent 20%, rgba(0, 0, 0, 0.25) 100%);
+	pointer-events: none;
+}
+
+.floor {
+	position: absolute;
+	left: 50%;
+	bottom: 2.5rem;
+	width: min(72rem, 92vw);
+	height: 14rem;
+	transform: translateX(-50%);
+	border-radius: 999px;
+	background: radial-gradient(circle at center, rgba(0, 255, 127, 0.18) 0%, rgba(0, 255, 127, 0.04) 36%, transparent 72%);
+	filter: blur(14px);
+	animation: floorGlow 7s ease-in-out infinite;
+}
+
+.main-column {
+	position: absolute;
+	left: 50%;
+	top: 14%;
+	width: clamp(6rem, 10vw, 10rem);
+	height: 62%;
+	transform: translateX(-50%);
+	border-radius: 999px;
+	background: linear-gradient(180deg, rgba(0, 255, 127, 0.94) 0%, rgba(0, 255, 127, 0.45) 38%, rgba(0, 255, 127, 0.05) 100%);
+	box-shadow:
+		0 0 30px rgba(0, 255, 127, 0.25),
+		0 0 80px rgba(60, 255, 157, 0.18);
+	filter: blur(18px);
+	opacity: 0.55;
+	animation: mainGlow 5s ease-in-out infinite alternate;
+}
+
+.light-stream-container {
+	position: absolute;
+	inset: 0;
+	mask-image: linear-gradient(180deg, transparent 0%, black 18%, black 82%, transparent 100%);
+}
+
+.light-beam {
+	position: absolute;
+	bottom: -10%;
+	height: 120%;
+	border-radius: 999px;
+	background: linear-gradient(180deg, rgba(0, 255, 127, 0) 0%, rgba(0, 255, 127, 0.8) 55%, rgba(60, 255, 157, 0.2) 100%);
+	box-shadow: 0 0 18px var(--glow-color-1), 0 0 36px var(--glow-color-2);
+	filter: blur(0.8px);
+	opacity: 0;
+	animation-name: rise, fade, rise;
+	animation-direction: normal, normal, reverse;
+	animation-iteration-count: infinite, infinite, infinite;
+	animation-timing-function: linear, linear, ease-in-out;
+	will-change: transform, opacity;
+}
+
+.navbar-wallet .wallet-adapter-button.wallet-adapter-button-trigger {
+	background: rgba(0, 0, 0, 0.3);
+	border: 1px solid rgba(255, 255, 255, 0.16);
+	border-radius: 0.75rem;
+	color: #f1f5f9;
+	font-family: inherit;
+	font-size: 0.875rem;
+	font-weight: 500;
+	height: 2.5rem;
+	padding: 0 0.9rem;
+	box-shadow: none;
+}
+
+.navbar-wallet .wallet-adapter-button.wallet-adapter-button-trigger:not([disabled]):hover {
+	background: rgba(255, 255, 255, 0.1);
+	border-color: rgba(0, 255, 127, 0.4);
+}
+
+.navbar-wallet .wallet-adapter-button.wallet-adapter-button-trigger:not([disabled]):focus-visible {
+	background: rgba(255, 255, 255, 0.1);
+	border-color: rgba(0, 255, 127, 0.4);
+	outline: none;
+}
+
+@keyframes rise {
+	0% {
+		transform: translateY(100%);
+		opacity: 0;
+	}
+
+	10% {
+		opacity: 1;
+	}
+
+	100% {
+		transform: translateY(-10%);
+		opacity: 0;
+	}
+}
+
+@keyframes fade {
+	0%,
+	100% {
+		opacity: 0;
+	}
+
+	5%,
+	80% {
+		opacity: 0.7;
+	}
+}
+
+@keyframes floorGlow {
+	0%,
+	100% {
+		transform: translateX(-50%) scale(0.95);
+		opacity: 0.65;
+	}
+
+	50% {
+		transform: translateX(-50%) scale(1.05);
+		opacity: 1;
+	}
+}
+
+@keyframes mainGlow {
+	from {
+		opacity: 0.55;
+		filter: blur(22px);
+	}
+
+	to {
+		opacity: 0.8;
+		filter: blur(14px);
+	}
+}
+
+@keyframes moveGrid {
+	from {
+		background-position: 0 0;
+	}
+
+	to {
+		background-position: -80px -40px;
+	}
+}
+
+@keyframes revealUp {
+	0% {
+		opacity: 0;
+		transform: translateY(18px) scale(0.985);
+	}
+
+	100% {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+.reveal-card {
+	opacity: 0;
+	animation: revealUp 560ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+	animation-delay: var(--reveal-delay, 0ms);
+	will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.scene::before,
+	.floor,
+	.main-column,
+	.light-beam,
+	.reveal-card {
+		animation: none !important;
+		opacity: 1 !important;
+		transform: none !important;
+	}
+}
