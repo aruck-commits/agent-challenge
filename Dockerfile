@@ -1,5 +1,6 @@
 FROM node:20-slim AS base
 WORKDIR /app
+RUN npm install -g npm@11.11.0
 COPY package*.json ./
 
 FROM base AS deps
