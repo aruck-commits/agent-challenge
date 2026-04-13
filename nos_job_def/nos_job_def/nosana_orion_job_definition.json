@@ -1,0 +1,25 @@
+{
+  "version": "0.1",
+  "type": "container",
+  "meta": {
+    "trigger": "dashboard"
+  },
+  "ops": [
+    {
+      "type": "container/run",
+      "id": "run-orion",
+      "args": {
+        "image": "ghcr.io/aruck-commits/orion-agent:latest",
+        "expose": 3000,
+        "env": {
+          "OPENAI_API_KEY": "nosana",
+          "OPENAI_BASE_URL": "https://5i8frj7ann99bbw9gzpprvzj2esugg39hxbb4unypskq.node.k8s.prd.nos.ci/v1",
+          "ORION_CHAT_MODEL": "Qwen3.5-9B-FP8",
+          "OPENROUTER_API_KEY": "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",
+          "OPENROUTER_BASE_URL": "https://openrouter.ai/api/v1",
+          "OPENROUTER_MODEL": "openai/gpt-4o-mini"
+        }
+      }
+    }
+  ]
+}

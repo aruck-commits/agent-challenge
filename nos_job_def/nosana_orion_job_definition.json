@@ -8,7 +8,7 @@
       "args": {
         "image": "ghcr.io/aruck-commits/orion-agent:latest",
         "cmd": [
-          "bun",
+          "npm",
           "run",
           "start"
         ],
