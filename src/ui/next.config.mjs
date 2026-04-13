@@ -14,6 +14,19 @@ const nextConfig = {
   experimental: {
     externalDir: true,
   },
+  webpack: (config) => {
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings ?? []),
+      (warning) => {
+        const message = typeof warning?.message === 'string' ? warning.message : '';
+        const resource = warning?.module?.resource ?? warning?.module?.userRequest ?? '';
+        return message.includes('Critical dependency: the request of a dependency is an expression')
+          && typeof resource === 'string'
+          && resource.includes('@elizaos/core/dist/node/index.node.js');
+      },
+    ];
+    return config;
+  },
   serverExternalPackages: [
     '@elizaos/client-telegram',
     '@anush008/tokenizers',

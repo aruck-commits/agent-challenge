@@ -1,7 +1,7 @@
 @config '../../tailwind.config.mjs';
+@import '@solana/wallet-adapter-react-ui/styles.css';
 @import 'tailwindcss';
 @import 'tw-animate-css';
-@import '@solana/wallet-adapter-react-ui/styles.css';
 
 :root {
 	color-scheme: dark;

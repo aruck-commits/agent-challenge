@@ -135,6 +135,11 @@ export default function ChatWindow() {
             placeholder="Ask Orion something about your portfolio..."
             value={input}
             onChange={e => setInput(e.target.value)}
+            onKeyDown={e => {
+              if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return;
+              e.preventDefault();
+              void sendMessage();
+            }}
             disabled={sending}
           />
           <button

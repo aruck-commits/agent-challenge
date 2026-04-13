@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import { BaseWalletMultiButton } from '@solana/wallet-adapter-react-ui';
 

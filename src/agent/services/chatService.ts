@@ -4,9 +4,19 @@ import { suggestRebalance } from '../actions/suggestRebalance';
 import { orionCharacter } from '../character';
 import type { ChatMessage, ChatResponse, PortfolioSnapshot, Alert, RebalanceSuggestion } from '../../shared/types';
 
-const OPENAI_API_KEY = 'nosana';
-const OPENAI_BASE_URL = 'https://6vq2bcqphcansrs9b88ztxfs88oqy7etah2ugudytv2x.node.k8s.prd.nos.ci/v1';
-const DEFAULT_MODEL = 'Qwen3.5-27B-AWQ-4bit';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? 'nosana';
+const OPENAI_BASE_URL = (process.env.OPENAI_BASE_URL ?? process.env.OPENAI_API_URL ?? 'https://5i8frj7ann99bbw9gzpprvzj2esugg39hxbb4unypskq.node.k8s.prd.nos.ci/v1')
+  .trim()
+  .replace(/\/+$/, '')
+  .replace(/\/models$/, '');
+const DEFAULT_MODEL = process.env.ORION_CHAT_MODEL ?? process.env.MODEL_NAME ?? 'Qwen3.5-9B-FP8';
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY?.trim();
+const OPENROUTER_BASE_URL = (process.env.OPENROUTER_BASE_URL ?? 'https://openrouter.ai/api/v1')
+  .trim()
+  .replace(/\/+$/, '');
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL?.trim() || 'openai/gpt-4o-mini';
+
+type ChatProvider = 'nosana' | 'openrouter';
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -275,19 +285,33 @@ function buildMessages(message: string, history: ChatMessage[], snapshot: Portfo
   ];
 }
 
-async function generateWithOpenAI(message: string, history: ChatMessage[], snapshot: PortfolioSnapshot | null): Promise<ChatResponse | null> {
-  if (!OPENAI_API_KEY) return null;
+async function generateWithProvider(
+  provider: ChatProvider,
+  message: string,
+  history: ChatMessage[],
+  snapshot: PortfolioSnapshot | null,
+): Promise<ChatResponse | null> {
+  const apiKey = provider === 'nosana' ? OPENAI_API_KEY : OPENROUTER_API_KEY;
+  const baseUrl = provider === 'nosana' ? OPENAI_BASE_URL : OPENROUTER_BASE_URL;
+  const model = provider === 'nosana' ? DEFAULT_MODEL : OPENROUTER_MODEL;
+
+  if (!apiKey) return null;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${OPENAI_API_KEY}`,
+    Authorization: `Bearer ${apiKey}`,
   };
 
-  const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+  if (provider === 'openrouter') {
+    headers['HTTP-Referer'] = 'https://orion.local';
+    headers['X-Title'] = 'Orion DeFi Risk Officer';
+  }
+
+  const response = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers,
     body: JSON.stringify({
-      model: DEFAULT_MODEL,
+      model,
       temperature: 0.3,
       max_tokens: 400,
       messages: buildMessages(message, history, snapshot),
@@ -295,8 +319,17 @@ async function generateWithOpenAI(message: string, history: ChatMessage[], snaps
   });
 
   if (!response.ok) {
-    const errorText = await response.text().catch(() => response.statusText);
-    throw new Error(`OpenAI request failed (${response.status}): ${errorText}`);
+    const rawErrorText = await response.text().catch(() => response.statusText);
+    const isWarmup503 = response.status === 503 && /service initializing|nosana network/i.test(rawErrorText);
+    if (provider === 'nosana' && isWarmup503) {
+      throw new Error('Nosana endpoint is initializing (503)');
+    }
+
+    const errorText = rawErrorText
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 300);
+    throw new Error(`${provider} request failed (${response.status}): ${errorText}`);
   }
 
   const payload = await response.json() as {
@@ -356,13 +389,59 @@ export async function generateOrionReply(message: string, history: ChatMessage[]
     };
   }
 
+  async function getFallbackReply(primaryError?: unknown): Promise<ChatResponse | null> {
+    if (!OPENROUTER_API_KEY) {
+      if (primaryError) {
+        console.warn('[ChatService] Orion LLM fallback engaged:', primaryError);
+      }
+      return null;
+    }
+
+    try {
+      const fallbackReply = await generateWithProvider('openrouter', message, history, snapshot);
+      if (fallbackReply) {
+        return fallbackReply;
+      }
+    } catch (fallbackError) {
+      console.warn('[ChatService] OpenRouter fallback failed:', fallbackError);
+    }
+
+    if (primaryError) {
+      console.warn('[ChatService] Orion LLM fallback engaged:', primaryError);
+    }
+
+    return null;
+  }
+
   if (OPENAI_API_KEY) {
     try {
-      const liveReply = await generateWithOpenAI(message, history, snapshot);
+      const liveReply = await generateWithProvider('nosana', message, history, snapshot);
       if (liveReply) {
         return liveReply;
       }
+
+      const fallbackReply = await getFallbackReply();
+      if (fallbackReply) {
+        return fallbackReply;
+      }
     } catch (error) {
+      if (error instanceof Error && /Nosana endpoint is initializing/i.test(error.message)) {
+        const fallbackReply = await getFallbackReply(error);
+        if (fallbackReply) {
+          return fallbackReply;
+        }
+
+        return {
+          reply: 'The Nosana model endpoint is warming up right now. Please retry in about 10-30 seconds.',
+          suggestedReplies: ['Retry now', 'Show portfolio health', 'Show active alerts'],
+        };
+      }
+
+      const fallbackReply = await getFallbackReply(error);
+      if (fallbackReply) {
+        return fallbackReply;
+      }
+
       console.warn('[ChatService] Orion LLM fallback engaged:', error);
     }
   }

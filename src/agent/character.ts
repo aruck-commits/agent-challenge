@@ -87,7 +87,7 @@ When asked to analyze a wallet, always:
   clients: ['telegram'],
 
   settings: {
-    model: 'gpt-4o-mini',
+    model: process.env.ORION_CHAT_MODEL ?? process.env.MODEL_NAME ?? 'Qwen3.5-27B-AWQ-4bit',
     maxResponseLength: 500,
   },
 };
