@@ -29,9 +29,8 @@ export async function fetchTokenBalances(walletAddress: string): Promise<TokenBa
 
   try {
     // Use Helius getAssetsByOwner DAS endpoint
-    const response = await axios.post(
+    const response = await axios.get(
       `https://api.helius.xyz/v0/addresses/${walletAddress}/balances?api-key=${apiKey}`,
-      {},
       { timeout: 10_000 },
     );
 
@@ -71,7 +70,7 @@ export async function fetchTokenBalances(walletAddress: string): Promise<TokenBa
     return tokens;
   } catch (err) {
     console.error('[Helius] Error fetching balances:', err);
-    throw new Error('Failed to fetch wallet balances from Helius.');
+    return [];
   }
 }
 
@@ -99,7 +98,7 @@ export async function fetchRecentTransactions(
     }));
   } catch (err) {
     console.error('[Helius] Error fetching transactions:', err);
-    throw new Error('Failed to fetch recent transactions from Helius.');
+    return [];
   }
 }
 

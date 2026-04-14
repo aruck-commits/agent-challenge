@@ -17,8 +17,13 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends wget ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
+COPY package*.json ./
+RUN npm install -g npm@11.11.0 \
+  && npm ci --omit=dev
+
 COPY --from=build /app/src/ui/.next/standalone ./
 COPY --from=build /app/src/ui/.next/static ./src/ui/.next/static
+COPY --from=build /app/src/ui/public ./src/ui/public
 
 EXPOSE 3000
 ENV NODE_ENV=production

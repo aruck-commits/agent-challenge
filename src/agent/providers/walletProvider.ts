@@ -13,12 +13,32 @@ import type { WalletPosition } from '../../shared/types';
 export async function fetchWalletPosition(walletAddress: string): Promise<WalletPosition> {
   console.log(`[WalletProvider] Fetching data for ${walletAddress}`);
 
-  // Fetch in parallel
-  const [tokens, { lpPositions, stakingPositions }, transactions] = await Promise.all([
+  // Fetch in parallel, but keep whatever data we can if one provider fails.
+  const [tokenResult, portfolioResult, txResult] = await Promise.allSettled([
     fetchTokenBalances(walletAddress),
     fetchPortfolioPositions(walletAddress),
     fetchRecentTransactions(walletAddress, 30),
   ]);
+
+  const tokens = tokenResult.status === 'fulfilled' ? tokenResult.value : [];
+  const portfolio = portfolioResult.status === 'fulfilled'
+    ? portfolioResult.value
+    : { lpPositions: [], stakingPositions: [] };
+  const transactions = txResult.status === 'fulfilled' ? txResult.value : [];
+
+  if (tokenResult.status === 'rejected') {
+    console.warn('[WalletProvider] Falling back to empty token balances:', tokenResult.reason);
+  }
+
+  if (portfolioResult.status === 'rejected') {
+    console.warn('[WalletProvider] Falling back to empty Jupiter portfolio:', portfolioResult.reason);
+  }
+
+  if (txResult.status === 'rejected') {
+    console.warn('[WalletProvider] Falling back to empty transaction history:', txResult.reason);
+  }
+
+  const { lpPositions, stakingPositions } = portfolio;
 
   // Batch price lookup for all held token mints
   const mints = tokens.map(t => t.mint);

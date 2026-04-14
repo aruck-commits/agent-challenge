@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { BaseWalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
@@ -36,6 +37,12 @@ export default function Navbar({
   onOpenDashboard,
   telegramConnecting,
 }: NavbarProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const statusClass = agentStatus === 'live'
     ? 'border-risk-low/30 bg-risk-low/10 text-risk-low'
     : agentStatus === 'degraded'
@@ -93,7 +100,17 @@ export default function Navbar({
           )}
 
           <div className="navbar-wallet">
-            <BaseWalletMultiButton labels={NAV_WALLET_LABELS} />
+            {mounted ? (
+              <BaseWalletMultiButton labels={NAV_WALLET_LABELS} />
+            ) : (
+              <button
+                type="button"
+                className="inline-flex h-10 items-center rounded-xl border border-white/15 bg-black/25 px-4 text-sm font-medium text-slate-100"
+                aria-label="Connect Wallet"
+              >
+                Connect Wallet
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -22,6 +22,10 @@ function getGlobalState(): GlobalElizaRuntime {
   return g;
 }
 
+function shouldStartElizaTelegramClient(): boolean {
+  return process.env.ORION_ENABLE_ELIZA_TELEGRAM_CLIENT === 'true';
+}
+
 function buildElizaCharacter(parseCharacter: (input: unknown) => any, solanaPluginPackage: string) {
   const { messageExamples: _legacyMessageExamples, ...characterWithoutLegacyExamples } = orionCharacter as any;
 
@@ -30,7 +34,7 @@ function buildElizaCharacter(parseCharacter: (input: unknown) => any, solanaPlug
     solanaPluginPackage,
   ]);
 
-  if (process.env.TELEGRAM_BOT_TOKEN) {
+  if (process.env.TELEGRAM_BOT_TOKEN && shouldStartElizaTelegramClient()) {
     plugins.add('@elizaos/client-telegram');
   }
 
@@ -115,7 +119,7 @@ export async function startElizaRuntime(): Promise<any> {
 
     await g[ELIZA_RUNTIME_FLAG].initialize({ allowNoDatabase: true });
 
-    if (process.env.TELEGRAM_BOT_TOKEN) {
+    if (process.env.TELEGRAM_BOT_TOKEN && shouldStartElizaTelegramClient()) {
       try {
         const telegramModule = await import('@elizaos/client-telegram');
         const telegramClient = (telegramModule as any).default ?? (telegramModule as any).TelegramClientInterface;
@@ -129,7 +133,7 @@ export async function startElizaRuntime(): Promise<any> {
         console.warn('[Eliza] Telegram client failed to start:', error);
       }
     } else {
-      console.log('[Eliza] Telegram client skipped (no TELEGRAM_BOT_TOKEN)');
+      console.log('[Eliza] Telegram client skipped (managed by AlertService or disabled)');
     }
 
     console.log('[Eliza] Agent runtime initialized for Orion');

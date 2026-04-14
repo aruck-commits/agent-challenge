@@ -20,9 +20,21 @@ import type {
 const BASE = '/api';
 
 async function request<T>(path: string, options?: RequestInit): Promise<ApiResponse<T>> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string> | undefined),
+  };
+
+  if (typeof window !== 'undefined') {
+    const walletAddress = window.localStorage.getItem('orion.walletAddress')?.trim();
+    if (walletAddress) {
+      headers['x-wallet-address'] = walletAddress;
+    }
+  }
+
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers,
   });
 
   if (!res.ok) {
@@ -59,8 +71,16 @@ export async function getSuggestions(): Promise<RebalanceSuggestion[]> {
 export async function addWallet(address: string): Promise<{ success: boolean; error?: string }> {
   const r = await request<{ address: string }>('/portfolio/watch', {
     method: 'POST',
+    headers: {
+      'x-wallet-address': address,
+    },
     body: JSON.stringify({ address }),
   });
+
+  if (r.success && typeof window !== 'undefined') {
+    window.localStorage.setItem('orion.walletAddress', address);
+  }
+
   return { success: r.success, error: r.error };
 }
 
